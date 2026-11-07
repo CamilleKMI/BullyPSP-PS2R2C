@@ -1,112 +1,111 @@
-# Bully / Canis Canem Edit (PS2, SLES-53561) → PSP — portage PS2RC
+# Bully / Canis Canem Edit (PS2, SLES-53561) → PSP — PS2RC port
 
 Based on PS2RC by SandstoneDev
 https://github.com/SandstoneDev/PS2RC
 Community: https://discord.gg/wV8x46ZTDu
 
-Portage expérimental, non affilié à Rockstar Games, Take-Two ou Sony, et non approuvé par eux ni par SandstoneDev.
-**Ce dépôt ne contient aucune donnée du jeu** : pas de fichiers du disque, pas de code du jeu traduit, pas
-d'EBOOT. Chaque utilisateur part de **sa propre copie** du disque PAL SLES-53561 (VER 1.01). La traduction et la
-compilation se font sur sa machine, pour son usage personnel. Voir `PS2RC/LICENSE` (licence PS2RC 1.2) et
-`PS2RC/NOTICE.md`.
+Experimental port, not affiliated with or endorsed by Rockstar Games, Take-Two, Sony or SandstoneDev.
+**This repository contains no game data**: no disc files, no translated game code, no EBOOT. Every user starts
+from **their own copy** of the PAL disc SLES-53561 (VER 1.01). Translation and compilation happen on their own
+machine, for personal use. See `PS2RC/LICENSE` (PS2RC licence 1.2) and `PS2RC/NOTICE.md`.
 
-## Où en est le portage
+## Where the port stands
 
-Le jeu démarre sur PSP (testé dans PPSSPP) et va jusqu'en jeu : écran titre, chargement, Jimmy devant l'école,
-déplacements, HUD, textes.
+The game boots on PSP (tested in PPSSPP) and reaches gameplay: title screen, loading, Jimmy in front of the
+school, movement, HUD, text.
 
-Le chiffre de référence se mesure dans PPSSPP en mode headless (PSP à 333 MHz), en jeu devant l'école, avec la
-distance d'affichage à 0,75 :
+The reference figure is measured in headless PPSSPP (PSP at 333 MHz), in game in front of the school, with the
+draw distance at 0.75:
 
-| Moment | ms par frame | fps |
+| Point in time | ms per frame | fps |
 |---|---|---|
-| Début du travail sur la vitesse | ~680 | ~1,5 |
-| Session 12 | 116 | 8,6 |
-| Session 13 (état actuel) | **80-81** | **~12,4** |
+| Start of the speed work | ~680 | ~1.5 |
+| Session 12 | 116 | 8.6 |
+| Session 13 (current) | **80-81** | **~12.4** |
 
-Le jeu PS2 vise 30 fps. Le temps virtuel du jeu avance donc plus lentement que le temps réel : le jeu est
-ralenti, il ne saute pas d'images.
+The PS2 game targets 30 fps, so game time runs slower than real time: the game is slowed down, it does not drop
+frames.
 
-| Domaine | État |
+| Area | State |
 |---|---|
-| Code du jeu (EE) | traduit en C par PS2RC (mode ABI, registres en variables locales, VU0 macro en local) |
-| Graphismes VU1 | microprogrammes réécrits en natif (maillages, skinning, feuillage) et envoyés directement au GE de la PSP ; les autres passent par une traduction rapide générée (`tools/vu1_fast.py`) |
-| GS | émulation légère, avec un cache de textures et des envois différés écrits bloc par bloc |
-| Distance d'affichage | ×0,75 sur les objets proches, appliquée par le convertisseur (`[[stage.transform]]`) |
-| Son | les modules du jeu (SCREAM, AUDVAG) tournent, mais sur un SPU **muet** : aucune sortie audio |
-| Cinématiques | sautées |
-| Passes plein écran (flou, halo) | sautées sur PSP (il faudrait du rendu dans une texture sur le GE) |
-| Sauvegardes | carte mémoire émulée dans `memcard/` (non testée en profondeur) |
+| Game code (EE) | translated to C by PS2RC (ABI mode, registers as locals, VU0 macro mode in locals) |
+| VU1 graphics | microprograms rewritten natively (meshes, skinning, foliage) and sent straight to the PSP GE; the others go through a generated fast translation (`tools/vu1_fast.py`) |
+| GS | lightweight emulation, with a texture cache and deferred uploads written block by block |
+| Draw distance | ×0.75 on near objects, applied by the converter (`[[stage.transform]]`) |
+| Sound | the game's modules (SCREAM, AUDVAG) run, but on a **silent** SPU: no audio output |
+| Movies | skipped |
+| Full-screen passes (blur, glow) | skipped on PSP (would need render-to-texture on the GE) |
+| Saves | memory card emulated in `memcard/` (not tested in depth) |
 
-## Ce qui reste à faire
+## What is left to do
 
-1. **Vitesse : il manque ~14 ms pour atteindre 15 fps (~66 ms par frame).** Il n'y a plus de gros poste isolé.
-   Voici la répartition mesurée (part du CPU occupé, PPSSPP) :
-   - code du jeu traduit : ~30 %, profil plat (la plus grosse fonction fait ~2 %) ;
-   - skinning (`skin_batch`) : ~9 %, presque tout dans la boucle VFPU par sommet ;
-   - lecture des commandes VIF (`vif1_chunk_`) : ~7 % ;
-   - préparation et envoi des lots de maillage (`nat_batch`, `mc_draw`, `nat_emit`, `set_3d_state`…) : ~15 % pour ~1 100 lots par frame ;
-   - paquets GS (`gs_packets_`) : ~4 %.
+1. **Speed: ~14 ms short of 15 fps (~66 ms per frame).** There is no single big item left. Measured breakdown
+   (share of busy CPU, PPSSPP):
+   - translated game code: ~30 %, flat profile (the largest function is ~2 %);
+   - skinning (`skin_batch`): ~9 %, almost all in the per-vertex VFPU loop;
+   - VIF command parsing (`vif1_chunk_`): ~7 %;
+   - mesh batch setup and submission (`nat_batch`, `mc_draw`, `nat_emit`, `set_3d_state`…): ~15 % for ~1,100 batches per frame;
+   - GS packets (`gs_packets_`): ~4 %.
 
-   Pistes déjà essayées sans gain (ne pas refaire à l'aveugle) :
-   - remplacer en natif le test sphère/boîte `0x1313D0` : plus lent, car l'appelant doit sauvegarder ses registres autour de l'appel ;
-   - un cache par site d'appel indirect (`PS2RC_IC=1`) : plus lent ;
-   - gérer la saturation des flottants dans l'unité flottante (`fresf_`) : plus lent sous PPSSPP ;
-   - réutiliser les sommets skinnés d'une frame à l'autre : seuls 4 lots sur 257 gardent les mêmes os.
+   Already tried without gain (do not redo blindly):
+   - a native replacement for the sphere/box test at `0x1313D0`: slower, because the caller has to save its registers around the call;
+   - a per-call-site cache for indirect calls (`PS2RC_IC=1`): slower;
+   - float saturation handled in the FPU (`fresf_`): slower under PPSSPP;
+   - reusing skinned vertices from one frame to the next: only 4 batches out of 257 keep the same bones.
 
-   Pistes ouvertes :
-   - rejouer les blocs DMA identiques d'une frame à l'autre (~400 sur 1 120), gain estimé à 2-4 ms ;
-   - remplacer en natif d'autres fonctions du jeu qui font des appels indirects, comme la recherche dichotomique `0x146970`, déjà faite (−1,6 ms) ;
-   - **mesurer sur une vraie PSP** : PPSSPP émule le VFPU avec un surcoût, donc les chiffres réels peuvent être meilleurs.
-2. **Son** : brancher un vrai modèle SPU2 (voix ADPCM et mixage) sur la sortie audio PSP. Coût CPU estimé à
-   5-15 %, à mettre derrière un réglage.
-3. **Cinématiques** : convertir les vidéos PSS en PMF avec le convertisseur (`--movies convert`) et les lire avec
+   Open leads:
+   - replay DMA blocks that are identical from one frame to the next (~400 of 1,120), estimated gain 2-4 ms;
+   - natively replace more game functions that make indirect calls, like the binary search at `0x146970` (already done, −1.6 ms);
+   - **measure on a real PSP**: PPSSPP emulates the VFPU with an overhead, so real figures may be better.
+2. **Sound**: hook a real SPU2 model (ADPCM voices and mixing) to the PSP audio output. Estimated CPU cost
+   5-15 %, to be put behind a setting.
+3. **Movies**: convert the PSS videos to PMF with the converter (`--movies convert`) and play them with
    `sceMpeg`.
-4. **Passes plein écran** : masque de profondeur et halo, en faisant du rendu dans une texture sur le GE.
-5. **Vraie PSP** : vérifier la mémoire (PSP-2000/3000 avec la mémoire étendue, `mem_volatile=1`) et la stabilité
-   sur une longue partie.
+4. **Full-screen passes**: depth mask and glow, using render-to-texture on the GE.
+5. **Real PSP**: check memory (PSP-2000/3000 with extended memory, `mem_volatile=1`) and stability over a long
+   play session.
 
-## Organisation
+## Layout
 
 ```
-README.md, push.sh       ce fichier ; script de publication (voir plus bas)
-PS2RC/                   le moteur PS2RC v0.2.1 (commit 8cd56bb), AVEC les modifications de ce portage
-packs/SLES-53561_v1.01/  le pack du jeu : hooks, code natif (src/), modules IOP, scripts de conversion
-tools/                   outils de travail (profilage PSP, laboratoire VU1, générateurs)
-env.sh, env.cmd, env.ps1 variables d'environnement du workspace
-local.toml.example       modèle de réglages machine (à copier en local.toml)
-work/                    (absent du dépôt) tout ce qui est fabriqué à partir de TON disque : privé
+README.md                this file
+PS2RC/                   the PS2RC v0.2.1 engine (commit 8cd56bb), WITH this port's changes
+packs/SLES-53561_v1.01/  the game pack: hooks, native code (src/), IOP modules, conversion scripts
+tools/                   working tools (PSP profiling, VU1 lab, generators)
+env.sh                   workspace environment variables
+local.toml.example       machine settings template (copy to local.toml)
+work/                    (not in the repository) everything made from YOUR disc: private
 ```
 
-Fichiers modifiés dans PS2RC par rapport à la v0.2.1 (`git -C PS2RC diff` sur une copie propre) :
-- `ps2rc/backend_c.py` et `ps2rc/vu/macro.py` : sorties supplémentaires (XOUT), fonctions qui ne touchent pas au
-  VU0 (VFREE), DI/MFC0 en local, VU0 macro et MMI en variables locales ;
-- `runtime/r5900_rt.h` et `hle/core/*` : `rt_di`, `rt_mfc0`, `vu0_clipw_l`, `RC_MAX_OVERLAYS` passé à 32 ;
-- `ps2rc/convert/{recipe,stage,pipeline}.py` : `[[stage.transform]]`, qui permet au pack de réécrire un fichier
-  du disque à la conversion, à taille égale ;
+Files changed in PS2RC compared with v0.2.1 (`git -C PS2RC diff` against a clean copy):
+- `ps2rc/backend_c.py` and `ps2rc/vu/macro.py`: extra outputs (XOUT), functions that do not touch VU0 (VFREE),
+  DI/MFC0 as locals, VU0 macro mode and MMI in local variables;
+- `runtime/r5900_rt.h` and `hle/core/*`: `rt_di`, `rt_mfc0`, `vu0_clipw_l`, `RC_MAX_OVERLAYS` raised to 32;
+- `ps2rc/convert/{recipe,stage,pipeline}.py`: `[[stage.transform]]`, which lets the pack rewrite a disc file at
+  conversion time, keeping its size;
 - `ps2rc/pipeline/{translate,parallel}.py`, `ps2rc/analysis/abi.py`, `ps2rc/iop/rt/iop_rt_int.h`.
 
-## Reprendre le travail
+## Continuing the work
 
-Il faut :
-- Python 3.11+ avec `pip install pyelftools pillow pytest` ;
-- la toolchain pspdev (`~/pspdev`) ;
-- PPSSPP, de préférence compilé en headless (`PPSSPPHeadless`) pour les mesures.
+You need:
+- Python 3.11+ with `pip install pyelftools pillow pytest`;
+- the pspdev toolchain (`~/pspdev`);
+- PPSSPP, preferably built headless (`PPSSPPHeadless`) for measurements.
 
 ```sh
-cp local.toml.example local.toml          # puis y mettre tes chemins (work, disque extrait)
+cp local.toml.example local.toml          # then put your paths in it (work, extracted disc)
 ln -s ../../packs/SLES-53561_v1.01 PS2RC/games/SLES-53561_v1.01
 . ./env.sh
 ```
 
-**A. Juste jouer / produire le dossier PSP** (le convertisseur fait tout) :
+**A. Just play / produce the PSP folder** (the converter does everything):
 ```sh
-cd PS2RC && python3 -m ps2rc.convert "/chemin/vers/ton_bully.iso" --out ~/sortie
-# -> ~/sortie/PS2RC_SLES53561 à copier dans PSP/GAME/ (≈3,8 Go sur une Memory Stick)
+cd PS2RC && python3 -m ps2rc.convert "/path/to/your_bully.iso" --out ~/output
+# -> ~/output/PS2RC_SLES53561 to copy into PSP/GAME/ (≈3.8 GB on a Memory Stick)
 ```
 
-**B. Développer** : il faut un `work/` rempli à partir de ton disque. Le disque est extrait dans `work/disc`, avec
-`work/discmap.txt` et `work/iso_meta.bin` (le convertisseur, ou la conversion ci-dessus avec `--work`). Ensuite :
+**B. Develop**: you need a `work/` filled from your disc. The disc is extracted to `work/disc`, with
+`work/discmap.txt` and `work/iso_meta.bin` (the converter, or the conversion above with `--work`). Then:
 ```sh
 cd PS2RC
 python3 games/SLES-53561_v1.01/convert/discover.py
@@ -115,28 +114,26 @@ python3 games/SLES-53561_v1.01/convert/exact_extra.py
 python3 games/SLES-53561_v1.01/convert/extra_outputs.py
 python3 ps2rc/pipeline/translate.py --pack SLES-53561_v1.01
 python3 games/SLES-53561_v1.01/convert/trapset.py
-bash mk/build.sh --pack SLES-53561_v1.01 host 4                 # version PC (comparaison d'images)
+bash mk/build.sh --pack SLES-53561_v1.01 host 4                 # PC build (frame comparison)
 SPLASH=0 bash mk/build.sh --pack SLES-53561_v1.01 psp 4         # -> work/psp/EBOOT.PBP
-python3 ps2rc/pipeline/stage.py --pack SLES-53561_v1.01 --out <dossier>/PS2RC_SLES53561
+python3 ps2rc/pipeline/stage.py --pack SLES-53561_v1.01 --out <folder>/PS2RC_SLES53561
 ```
 
-**Fichiers privés à régénérer** (ils sont issus du jeu, donc jamais dans le dépôt). Le build fonctionne sans eux,
-mais plus lentement :
-- `work/vu1aot/hle_vu1_fast.h` : microprogrammes VU1 en traduction rapide. Lance une version PC avec
-  `HLE_VU1_PROF=/chemin/absolu` pour récupérer `prog_*.code` et les histogrammes, puis
+**Private files to regenerate** (they are derived from the game, so never in the repository). The build works
+without them, only slower:
+- `work/vu1aot/hle_vu1_fast.h`: VU1 microprograms in fast translation. Run a PC build with
+  `HLE_VU1_PROF=/absolute/path` to collect `prog_*.code` and the histograms, then
   `FAST_CLAMP=1 python3 tools/vu1_fast.py prog_000_c3651f62.code PCHIST work/vu1aot/hle_vu1_fast.h`.
-- `work/vu1aot/hle_vu1_aot.h` : `tools/vu1_aot.py` (même principe).
-- `work/iopgen/` : modules son traduits (`convert/iopgen.py`).
+- `work/vu1aot/hle_vu1_aot.h`: `tools/vu1_aot.py` (same principle).
+- `work/iopgen/`: translated sound modules (`convert/iopgen.py`).
 
-**Mesurer** : `ps2rc.cfg` du dossier de test avec `max_seconds=330`, `shot_frame=1250` et `zprof=1` (profil par
-zones). Les lignes `PERF` du `session.log` donnent les ms par frame. Lance une seule instance de PPSSPP à la fois :
-son horloge suit la charge de la machine. Pour le profil par adresse, utilise les variables d'environnement
-`PPSSPP_PCPROF` / `PPSSPP_PCPROF_FROM`, puis `tools/psp_pcprof_report.py`, `psp_pcprof_lines.py` et
-`psp_pcprof_callers.py`.
+**Measuring**: in the test folder's `ps2rc.cfg`, set `max_seconds=330`, `shot_frame=1250` and `zprof=1` (zone
+profile). The `PERF` lines in `session.log` give ms per frame. Run only one PPSSPP instance at a time: its clock
+follows the machine's load. For a per-address profile, use the `PPSSPP_PCPROF` / `PPSSPP_PCPROF_FROM`
+environment variables, then `tools/psp_pcprof_report.py`, `psp_pcprof_lines.py` and `psp_pcprof_callers.py`.
 
-Réglages utiles dans `ps2rc.cfg` :
-- `x_folnat=0` : feuillage par le programme VU ;
-- `x_cellput=0` : textures écrites pixel par pixel ;
-- `x_meshcache=0` : sans cache de maillages ;
-- `x_vu1fast=0` : sans traduction rapide.
-
+Useful `ps2rc.cfg` switches:
+- `x_folnat=0`: foliage through the VU program;
+- `x_cellput=0`: textures written pixel by pixel;
+- `x_meshcache=0`: no mesh cache;
+- `x_vu1fast=0`: no fast translation.
