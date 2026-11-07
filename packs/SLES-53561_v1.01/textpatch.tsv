@@ -1,0 +1,13 @@
+# Text patches applied by ps2rc/pipeline/prepare_gen.py --textpatch (function<TAB>old<TAB>new, exactly once per function).
+# fn_001008c0 (the game's heap set-up) builds the top of RAM as 0x1FF0000 | 0x8000 (lui v0,0x1ff / ori 0x8000 at
+# 0x1008E4): it must see the RAM the platform has, hle_ram_end (host 32 MB; PSP: the pack's ram_end_psp).
+# A recipe for the generated C, not copied code.
+fn_001008c0	SX32(0x1ff0000u)	SX32(hle_ram_end - 0x10000u)
+# The same function takes a fixed 13.5 MB pool (0xD80000: the "Stream" heap of the world streaming; malloc + pool init
+# at 0x2960B0) before the "SIMPLE" heap gets the rest (in floats: total - 14155776.0f - 16 - 16). The SIMPLE heap
+# needs ~11 MB, so below 32 MB of RAM the pool gets what is left after 11 MB for SIMPLE: hle_ram_end - 0x8000
+# - 0x76F080 - 0xB00000, rounded down to 64 KB (28 MB of RAM: 9.5 MB). At 32 MB the original 13.5 MB.
+# 8 MB proved too small: "Stream: ... free 720 bytes" once the world streams in.
+fn_001008c0	r4 = (int32_t)(SX32(0xd80000u));	r4 = (int32_t)(SX32((hle_ram_end >= 0x2000000u ? 0xD80000u : ((hle_ram_end - 0x127F080u) & ~0xFFFFu))));
+fn_001008c0	r6 = (int32_t)(SX32(0xd80000u));	r6 = (int32_t)(SX32((hle_ram_end >= 0x2000000u ? 0xD80000u : ((hle_ram_end - 0x127F080u) & ~0xFFFFu))));
+fn_001008c0	SX32(0x4b580000u)	SX32(({ union { float f; uint32_t u; } q_; q_.f = (float)(hle_ram_end >= 0x2000000u ? 0xD80000u : ((hle_ram_end - 0x127F080u) & ~0xFFFFu)); q_.u; }))

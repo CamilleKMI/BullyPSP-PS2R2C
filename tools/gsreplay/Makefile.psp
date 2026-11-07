@@ -1,0 +1,13 @@
+# PSP replayer (built by build_psp.sh in work/gsreplay/psp with copies of the sources)
+TARGET = gsreplay
+OBJS = main_psp.o gsreplay_core.o hle_gfx_scan.o hle_vu1.o hle_ge_gs.o
+INCDIR = .
+CFLAGS = -O2 -G0 -Wall -Wno-unused-function -DHLE_PSP $(XCFLAGS)
+CXXFLAGS = $(CFLAGS)
+ASFLAGS = $(CFLAGS)
+LIBS = -lpspgu -lpsprtc -lpsppower -lm
+EXTRA_TARGETS = EBOOT.PBP
+PSP_EBOOT_TITLE = BULLYPS2 GS replay
+PSP_LARGE_MEMORY = 1
+PSPSDK = $(shell psp-config --pspsdk-path)
+include $(PSPSDK)/lib/build.mak

@@ -1,0 +1,8 @@
+# PS2RC per-machine settings (copy to local.toml and to PS2RC/local.toml, then edit the paths).
+# Everything below work/ is made from YOUR disc: never share it.
+[paths]
+work = "/chemin/vers/BULLYPS2/work"
+analysis = "/chemin/vers/BULLYPS2/work/analysis"
+
+[games."SLES-53561_v1.01"]
+disc = "/chemin/vers/BULLYPS2/work/disc"

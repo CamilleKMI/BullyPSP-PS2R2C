@@ -1,0 +1,19 @@
+# never in a pack: anything from the disc or made from it
+*.iso
+*.ISO
+*.cso
+*.elf
+*.ELF
+*.irx
+*.IRX
+*.pss
+*.PSS
+*.PBP
+*.prx
+*.o
+*.a
+*.log
+work/
+disc/
+build/
+__pycache__/

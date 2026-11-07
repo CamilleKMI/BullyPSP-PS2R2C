@@ -1,0 +1,17 @@
+work/
+dist/
+stage/
+ppsspp-memstick/
+_to_delete/
+downloads/
+refdocs/
+local.toml
+PS2RC/local.toml
+PS2RC/games/SLES-53561_v1.01
+*.iso
+*.ISO
+*.PBP
+*.elf
+*.o
+__pycache__/
+.pushrepo/

@@ -1,0 +1,167 @@
+/* hooks.def - the guest functions this pack hooks or traces.
+ *
+ *   HOOK(addr, name)                 the translated function at addr is renamed fn_<addr>__guest; every call reaches
+ *                                    the HLE function of that name (hle/core: Sony library functions such as
+ *                                    sceSifCallRpc, scePadRead, sceMcOpen, write, DelayThread; or a function of the
+ *                                    pack's own modules, HLE_FN(name)), which may call the original (GUEST_FN(name))
+ *   TRACE(addr, name, flags)         the original runs inside a call-log wrapper; flags 1 = milestone on the first
+ *                                    call and return, 8 = 64-bit a0 / a1 / v0 / f0 of the first calls; other bits go
+ *                                    to the pack's hle_pack_trace
+ *   HOOK_OV(ov, addr, name)          the same for a function of code overlay ov
+ *   TRACE_OV(ov, addr, name, flags)
+ * Addresses: 8 lowercase hex digits. Names are C identifiers, unique in the file. Translate again after a change:
+ * hooked functions get different argument rules (ps2rc/pipeline/translate.py psp_rules).
+ * The names the core implements are the HLE_SCE(...) definitions in hle/core/*.c; a name it uses that this list
+ * does not bind is simply not hooked.
+ */
+
+/* Sony library functions of this disc, named by aligning the library layout of PS2RC's reference pack
+   (tools/sce_layout_match.py, tools/sce_align.py, tools/make_hooks.py); addresses are facts of this disc version. */
+/* ---- libkernl */
+HOOK(001149a8, write)
+HOOK(00114a28, read)
+HOOK(00114c30, _sceSDC)
+HOOK(00114d70, _sceIDC)
+HOOK(001151b8, InitThread)
+HOOK(001152a8, iWakeupThread)
+HOOK(00115340, iRotateThreadReadyQueue)
+HOOK(001153c0, iSuspendThread)
+HOOK(00115458, DelayThread)
+HOOK(00115520, StartThread)
+HOOK(001173c8, sceSifInitCmd)
+HOOK(001176b0, sceSifAddCmdHandler)
+HOOK(001178b0, sceSifSendCmd)
+HOOK(001178f0, isceSifSendCmd)
+HOOK(00117b28, sceSifInitRpc)
+HOOK(001182d0, sceSifBindRpc)
+HOOK(001184b0, sceSifCallRpc)
+HOOK(001186b0, sceSifCheckStatRpc)
+HOOK(001193f0, sceFsInit)
+HOOK(00119688, sceFsReset)
+HOOK(001198f0, sceOpen)
+HOOK(00119b80, sceClose)
+HOOK(00119cf8, sceLseek)
+HOOK(00119f38, sceRead)
+HOOK(0011a1a8, sceWrite)
+HOOK(0011a468, sceIoctl)
+HOOK(0011b150, sceDopen)
+HOOK(0011b4d8, sceGetstat)
+HOOK(0011bf58, sceLseek64)
+HOOK(0011c818, sceSifInitIopHeap)
+HOOK(0011c8a0, sceSifAllocIopHeap)
+HOOK(0011ca28, sceSifLoadIopHeap)
+HOOK(0011cef8, sceSifLoadFileReset)
+HOOK(0011cf30, _sceSifLoadModuleBuffer)
+HOOK(0011d540, _sceSifLoadModule)
+HOOK(0011dac8, sceSifResetIop)
+HOOK(0011dc20, sceSifIsAliveIop)
+HOOK(0011dc48, sceSifSyncIop)
+HOOK(0011dc98, sceSifRebootIop)
+HOOK(0011e8d8, _InitSys)    /* calls InitThread, tail clears the 512-byte table */
+HOOK(0011ecd8, Exit)
+HOOK(0011f788, iGetTimerSystemTime)
+HOOK(0011f7d8, GetTimerSystemTime)
+HOOK(00120310, SetTimerAlarm)
+HOOK(00120440, iSetTimerAlarm)
+HOOK(00120530, ReleaseTimerAlarm)
+HOOK(001205d8, iReleaseTimerAlarm)
+/* ---- libc */
+HOOK(00108ad0, memcpy)
+HOOK(00108c88, memset)
+/* ---- libcdvd */
+HOOK(001571d0, sceCdCallback)
+HOOK(00157688, sceCdPOffCallback)
+HOOK(001577d8, sceCdLayerSearchFile)
+HOOK(00157c50, sceCdNcmdDiskReady)
+HOOK(00157ce8, sceCdSync)
+HOOK(00157d88, sceCdSyncS)
+HOOK(00158000, sceCdInit)
+HOOK(001582e8, sceCdDiskReady_old)
+HOOK(00158500, sceCdDiskReady)
+HOOK(00158720, sceCdStandby)
+HOOK(001587d0, sceCdBreak)
+HOOK(00158888, sceCdReadDvdDualInfo)
+HOOK(00158980, sceCdReadClock)
+/* ---- libpad */
+HOOK(00120e28, scePadInit)    /* size differs, order-aligned */
+HOOK(00120fc0, scePadInit2)    /* size differs, order-aligned */
+HOOK(001210b8, scePadEnd)    /* size differs, order-aligned */
+HOOK(00121280, scePadPortOpen)
+HOOK(00121468, scePadPortClose)
+HOOK(00121678, scePadGetFrameCount)    /* size differs, order-aligned */
+HOOK(001216d0, scePadRead)    /* size differs, order-aligned */
+HOOK(00121748, scePadGetState)    /* size differs, order-aligned */
+HOOK(001217f8, scePadSetReqState)    /* size differs, order-aligned */
+HOOK(001218b0, scePadGetReqState)    /* size differs, order-aligned */
+HOOK(00121940, scePadInfoAct)    /* size differs, order-aligned */
+HOOK(00121a58, scePadInfoComb)    /* size differs, order-aligned */
+HOOK(00121b70, scePadInfoMode)    /* size differs, order-aligned */
+HOOK(00121ca8, scePadSetMainMode)
+HOOK(00121d60, scePadSetActDirect)    /* size differs, order-aligned */
+HOOK(00121e28, scePadSetActAlign)
+HOOK(00121f00, scePadGetButtonMask)    /* size differs, order-aligned */
+HOOK(00121fb0, scePadSetButtonInfo)
+HOOK(00122060, scePadInfoPressMode)    /* size differs, order-aligned */
+HOOK(001220e0, scePadEnterPressMode)
+HOOK(00122138, scePadExitPressMode)
+HOOK(00122190, scePadSetVrefParam)
+HOOK(00122260, scePadGetPortMax)
+HOOK(001222c8, scePadGetSlotMax)
+HOOK(00122330, scePadGetModVersion)
+HOOK(00122398, scePadSetWarningLevel)
+HOOK(00122400, scePadSetDmaCallback)
+/* ---- libmc */
+HOOK(001551c8, sceMcInit)    /* binds 0x80000400 */
+HOOK(00155460, sceMcEnd)    /* order after sceMcInit */
+HOOK(001555e0, sceMcGetSlotMax)
+HOOK(001556a0, sceMcOpen)
+HOOK(001557c8, sceMcMkdir)
+HOOK(00155800, sceMcClose)
+HOOK(001558c0, sceMcSeek)
+HOOK(00155a50, sceMcRead)
+HOOK(00155b68, sceMcWrite)
+HOOK(00155ce0, sceMcSync)
+HOOK(00155e00, sceMcGetInfo)
+HOOK(00155f80, sceMcUdCheckNewCard)
+HOOK(00155ff0, sceMcGetDir)
+HOOK(001561d0, sceMcChdir)
+HOOK(00156310, sceMcFormat)
+HOOK(001563e0, sceMcDelete)
+HOOK(00156500, sceMcFlush)
+HOOK(001565c0, sceMcSetFileInfo)
+HOOK(00156790, sceMcRename)    /* size differs, order-aligned */
+HOOK(001568e8, sceMcUnformat)
+HOOK(001569b8, sceMcGetEntSpace)
+/* ---- libgraph */
+HOOK(001122f0, sceGsResetGraph)
+HOOK(00112490, sceGsResetPath)
+HOOK(00113178, sceGsSyncV)
+HOOK(00113210, sceGsSyncPath)
+HOOK(00113668, sceGsExecStoreImage)
+/* ---- the game's own functions */
+HOOK(00122900, overlay_file_load)    /* (path, load address): reads an OLF code overlay (MWo3) into the window */
+HOOK(0049ab40, overlay_file_load2)   /* (path, load address): the second loader (minigame / class overlays) */
+HOOK_OV(2, 00759050, movie_init)     /* MPEG.OLF: init (IPU, sdrdrv sound) */
+HOOK_OV(2, 00758fc0, movie_play)     /* MPEG.OLF: (path, 0, size) plays one PSS movie */
+HOOK_OV(2, 00759040, movie_shutdown) /* MPEG.OLF: shutdown */
+HOOK(00305ad0, file_stream_seek)     /* (stream, offset, whence): the game's file-device layer (diagnostic wrapper) */
+HOOK(003058e8, file_stream_open)     /* (path, mode string) -> stream or 0 (diagnostic wrapper) */
+/* ---- traces (boot milestones) */
+TRACE(001867a0, fs_init_1867a0, 1)
+TRACE(0017e1a0, dvd_device_register_17e1a0, 1)
+TRACE(003ea1e0, device_create_3ea1e0, 1)
+TRACE(00305e20, device_add_305e20, 1)
+TRACE(00305358, device_remove_305358, 1)
+TRACE(00305ce0, device_reset_305ce0, 1)
+TRACE(00305638, device_find_305638, 8)
+TRACE(003ea0a0, dvd_open_3ea0a0, 8)
+TRACE(003ea540, dvd_lookup_3ea540, 8)
+TRACE(003ea180, dvd_close_3ea180, 8)
+TRACE(003059d8, file_stream_close_3059d8, 8)
+HOOK(00122870, ctor_table_run)       /* (table start, table end): runs static constructors; for an overlay's table the
+                                        dispatcher must switch to that overlay first */
+TRACE(00432ff0, clothing_build_step_432ff0, 8)
+TRACE(00289150, pad_update_289150, 8)
+TRACE(00287cb0, pad_port_update_287cb0, 8)
+HOOK(00146970, table_find_u16)      /* (key): binary search of a 6-byte record table at 0x6448F0 keyed by u16 (comparator 0x1469B0 through a function pointer): native */
+HOOK(00415d80, sound_objects_drain)  /* (list): loops until every object's update (vtable+12) lets go (diagnostic) */

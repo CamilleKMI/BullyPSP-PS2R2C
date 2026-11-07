@@ -1,0 +1,5 @@
+# setjmp/longjmp path (callee-saved s4-s7/fp/f24-f31 handed back through 0010b130): released by the longjmp pass of
+# ps2rc/analysis/abi.py, behaviour diverged (NPC positions from host frame ~10); found by bisection, session 12
+002925c0
+00295d60
+002962f0
