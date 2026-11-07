@@ -140,15 +140,3 @@ Réglages utiles dans `ps2rc.cfg` :
 - `x_meshcache=0` : sans cache de maillages ;
 - `x_vu1fast=0` : sans traduction rapide.
 
-## Publier (push.sh)
-
-`./push.sh` copie dans `.pushrepo/` uniquement le code source :
-- `PS2RC/` sans son `.git` ;
-- le pack ;
-- `tools/` ;
-- les fichiers `env.*` ;
-- ce README.
-
-Il vérifie ensuite qu'aucun fichier ne ressemble à une donnée du jeu (images disque, EBOOT, en-têtes VU1 générés,
-gros fichiers…), puis demande le message de commit et un token GitHub (collé sans être affiché ni enregistré)
-avant de pousser.
